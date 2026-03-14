@@ -1,0 +1,69 @@
+# ================== 主配置文件 ==================
+# 公共配置和模块定义，不包含具体环境的值
+spring:
+  application:
+    name: nursing-system  # 应用名称（用你的项目名）
+
+  # 激活开发环境
+  profiles:
+    active: dev
+
+  # 允许循环引用（某些业务场景需要）
+  main:
+    allow-circular-references: true
+
+  # Jackson 全局配置（日期格式化）
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+# ================== MyBatis-Plus 配置 ==================
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.example.nursingsystem.*.entity
+  configuration:
+    map-underscore-to-camel-case: true  # 数据库下划线转Java驼峰
+    cache-enabled: false                # 关闭二级缓存
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 开发环境打印SQL
+  global-config:
+    db-config:
+      logic-delete-field: deleted       # 逻辑删除字段
+      logic-delete-value: 1              # 已删除
+      logic-not-delete-value: 0          # 未删除
+
+# ================== 自定义配置（模块定义）==================
+# 这里只定义配置项的结构，具体值在 application-dev.yml 中
+sky:
+  jwt:
+    admin-secret-key: ${sky.jwt.admin-secret-key}
+    admin-ttl: ${sky.jwt.admin-ttl}
+    admin-token-name: ${sky.jwt.admin-token-name}
+    user-secret-key: ${sky.jwt.user-secret-key}
+    user-ttl: ${sky.jwt.user-ttl}
+    user-token-name: ${sky.jwt.user-token-name}
+
+  datasource:
+    driver-class-name: ${sky.datasource.driver-class-name}
+    host: ${sky.datasource.host}
+    port: ${sky.datasource.port}
+    database: ${sky.datasource.database}
+    username: ${sky.datasource.username}
+    password: ${sky.datasource.password}
+
+  redis:
+    host: ${sky.redis.host}
+    port: ${sky.redis.port}
+    database: ${sky.redis.database}
+
+  alioss:
+    endpoint: ${sky.alioss.endpoint}
+    access-key-id: ${sky.alioss.access-key-id}
+    access-key-secret: ${sky.alioss.access-key-secret}
+    bucket-name: ${sky.alioss.bucket-name}
+
+
+# ================== 日志级别 ==================
+logging:
+  level:
+    root: INFO #INFO代表可以在控制台输出简洁日志，DEBUG代表可以输出所有日志
+    com.example.nursingsystem: INFO

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.nursingsystem.system.mapper.UserMapper">
+
+    <resultMap id="UserResult" type="com.example.nursingsystem.system.entity.User">
+        <id property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="nickname" column="nickname"/>
+        <result property="email" column="email"/>
+        <result property="phone" column="phone"/>
+        <result property="gender" column="gender"/>
+        <result property="avatar" column="avatar"/>
+        <result property="status" column="status"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+    </resultMap>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectUserByUsername" resultMap="UserResult">
+        SELECT * FROM sys_user
+        WHERE username = #{username}
+        AND deleted = 0
+    </select>
+
+    <!-- 根据手机号查询用户 -->
+    <select id="selectUserByPhone" resultMap="UserResult">
+        SELECT * FROM sys_user
+        WHERE phone = #{phone}
+        AND deleted = 0
+    </select>
+
+    <!-- 根据邮箱查询用户 -->
+    <select id="selectUserByEmail" resultMap="UserResult">
+        SELECT * FROM sys_user
+        WHERE email = #{email}
+        AND deleted = 0
+    </select>
+
+    <!-- 根据用户 ID 查询用户详情（包含角色信息） -->
+    <select id="selectUserDetailById" resultMap="UserResult">
+        SELECT u.*
+        FROM sys_user u
+        WHERE u.user_id = #{userId}
+        AND u.deleted = 0
+    </select>
+
+    <!-- 根据用户 ID 查询角色 ID 列表 -->
+    <select id="selectRoleIdsByUserId" resultType="java.lang.Long">
+        SELECT role_id
+        FROM sys_user_role
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 批量删除用户（逻辑删除） -->
+    <update id="batchDeleteUsers">
+        UPDATE sys_user
+        SET deleted = 1,
+            update_time = NOW()
+        WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        AND deleted = 0
+    </update>
+
+</mapper>
