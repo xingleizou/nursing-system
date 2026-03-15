@@ -54,8 +54,8 @@ sky:
   # 阿里云OSS配置
   alioss:
     endpoint: oss-cn-beijing.aliyuncs.com
-    access-key-id: LTAI5t8uF9GNJLBWWrssa7Gs
-    access-key-secret: m6BUKnSzQCIsg2noRGEp6Akq8IJRQd
+    access-key-id: 
+    access-key-secret: 
     bucket-name: java-sky-z
 
 
