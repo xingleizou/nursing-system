@@ -49,9 +49,16 @@ public interface UserMapper extends BaseMapper<User> {
     java.util.List<Long> selectRoleIdsByUserId(@Param("userId") Long userId);
 
     /**
-     * 批量删除用户（逻辑删除）
+     * 批量删除用户 (逻辑删除)
      * @param userIds 用户 ID 数组
      * @return 影响行数
      */
     int batchDeleteUsers(@Param("userIds") Long[] userIds);
+
+    /**
+     * 物理删除用户 (真正删除记录)
+     * @param userId 用户 ID
+     * @return 影响行数
+     */
+    int deleteByIdPhysical(@Param("userId") Long userId);
 }

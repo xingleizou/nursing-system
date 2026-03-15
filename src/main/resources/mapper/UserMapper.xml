@@ -54,7 +54,7 @@
         WHERE user_id = #{userId}
     </select>
 
-    <!-- 批量删除用户（逻辑删除） -->
+    <!-- 批量删除用户 (逻辑删除) -->
     <update id="batchDeleteUsers">
         UPDATE sys_user
         SET deleted = 1,
@@ -65,5 +65,11 @@
         </foreach>
         AND deleted = 0
     </update>
+
+    <!-- 物理删除用户 (真正删除记录) -->
+    <delete id="deleteByIdPhysical">
+        DELETE FROM sys_user
+        WHERE user_id = #{userId}
+    </delete>
 
 </mapper>

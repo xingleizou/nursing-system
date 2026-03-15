@@ -5,15 +5,22 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.nursingsystem.common.exception.BusinessException;
 import com.example.nursingsystem.common.exception.ErrorCode;
+import com.example.nursingsystem.common.utils.PasswordUtil;
 import com.example.nursingsystem.system.dto.UserDTO;
+import com.example.nursingsystem.system.entity.Role;
 import com.example.nursingsystem.system.entity.User;
-import com.example.nursingsystem.system.entity.UserRole;
+import com.example.nursingsystem.system.mapper.RoleMapper;
 import com.example.nursingsystem.system.mapper.UserMapper;
 import com.example.nursingsystem.system.mapper.UserRoleMapper;
 import com.example.nursingsystem.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 用户服务实现类
@@ -23,6 +30,9 @@ import org.springframework.util.StringUtils;
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     private final UserRoleMapper userRoleMapper;
+    private final RoleMapper roleMapper;
+    private final UserMapper userMapper;
+
 
     @Override
     public User getByUsername(String username) {
@@ -32,7 +42,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public Page<User> pageUsers(UserDTO userDTO, Integer pageNum, Integer pageSize) {
+    public Page<Map<String, Object>> pageUsers(UserDTO userDTO, Integer pageNum, Integer pageSize) {
         Page<User> page = new Page<>(pageNum, pageSize);
         
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -46,7 +56,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             wrapper.eq(User::getStatus, userDTO.getStatus());
         }
         
-        return this.page(page, wrapper);
+        Page<User> userPage = this.page(page, wrapper);
+        
+        // 为每个用户查询角色信息并转换为 Map
+        List<User> userList = userPage.getRecords();
+        List<Map<String, Object>> result = userList.stream().map(user -> {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("userId", user.getUserId());
+            userMap.put("username", user.getUsername());
+            userMap.put("nickname", user.getNickname());
+            userMap.put("email", user.getEmail());
+            userMap.put("phone", user.getPhone());
+            userMap.put("gender", user.getGender());
+            userMap.put("avatar", user.getAvatar());
+            userMap.put("status", user.getStatus());
+            userMap.put("deptId", user.getDeptId());
+            userMap.put("createTime", user.getCreateTime());
+            userMap.put("updateTime", user.getUpdateTime());
+            
+            // 查询用户角色
+            List<Role> roles = roleMapper.selectRolesByUserId(user.getUserId());
+            if (!roles.isEmpty()) {
+                String roleNames = roles.stream()
+                    .map(Role::getRoleName)
+                    .collect(Collectors.joining(","));
+                Long roleId = roles.get(0).getRoleId();
+                userMap.put("roleId", roleId);
+                userMap.put("roleName", roleNames);
+            } else {
+                userMap.put("roleId", null);
+                userMap.put("roleName", "");
+            }
+            
+            return userMap;
+        }).collect(Collectors.toList());
+        
+        // 创建新的 Page 对象返回
+        Page<Map<String, Object>> mapPage = new Page<>(pageNum, pageSize);
+        mapPage.setTotal(userPage.getTotal());
+        mapPage.setRecords(result);
+        
+        return mapPage;
     }
 
     @Override
@@ -60,7 +110,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         User user = new User();
         user.setUsername(userDTO.getUsername());
-        user.setPassword(userDTO.getPassword());
+        // 密码加密
+        user.setPassword(PasswordUtil.encode(userDTO.getPassword()));
         user.setNickname(userDTO.getNickname());
         user.setEmail(userDTO.getEmail());
         user.setPhone(userDTO.getPhone());
@@ -120,6 +171,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.USER_NOT_EXIST.getCode(), 
                                         ErrorCode.USER_NOT_EXIST.getMessage());
         }
+        // 删除用户角色关联
+        userRoleMapper.deleteUserRoleByUserId(userId);
+        // 逻辑删除用户 (保留历史记录，符合医疗行业规范)
         return this.removeById(userId);
+    }
+
+    /**
+     * 物理删除用户 (仅用于 GDPR 合规或特殊场景)
+     * 注意：此操作不可恢复，需谨慎使用！
+     */
+    public boolean physicallyDeleteUser(Long userId) {
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_EXIST.getCode(),
+                                        ErrorCode.USER_NOT_EXIST.getMessage());
+        }
+        // 1. 删除用户角色关联
+        userRoleMapper.deleteUserRoleByUserId(userId);
+        // 2. 物理删除 (真正删除记录)
+        int result = userMapper.deleteByIdPhysical(userId);
+        return result > 0;
     }
 }

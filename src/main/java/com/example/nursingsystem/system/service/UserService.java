@@ -5,6 +5,8 @@ import com.example.nursingsystem.system.dto.UserDTO;
 import com.example.nursingsystem.system.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.Map;
+
 /**
  * 用户服务接口
  */
@@ -18,7 +20,7 @@ public interface UserService extends IService<User> {
     /**
      * 分页查询用户
      */
-    Page<User> pageUsers(UserDTO userDTO, Integer pageNum, Integer pageSize);
+    Page<Map<String, Object>> pageUsers(UserDTO userDTO, Integer pageNum, Integer pageSize);
 
     /**
      * 创建用户
@@ -34,4 +36,11 @@ public interface UserService extends IService<User> {
      * 删除用户
      */
     boolean deleteUser(Long userId);
+
+    /**
+     * 物理删除用户 (彻底删除，不可恢复)
+     * @param userId 用户 ID
+     * @return 是否成功
+     */
+    boolean physicallyDeleteUser(Long userId);
 }

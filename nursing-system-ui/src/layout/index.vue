@@ -7,6 +7,10 @@
           <el-icon><User /></el-icon>
           <span>基础用户管理</span>
         </el-menu-item>
+        <el-menu-item index="/knowledge/resource">
+          <el-icon><Document /></el-icon>
+          <span>知识资源管理</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -43,7 +47,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
-import { User, ArrowDown } from '@element-plus/icons-vue'
+import { User, ArrowDown, Document } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()

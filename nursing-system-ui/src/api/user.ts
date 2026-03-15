@@ -46,3 +46,14 @@ export function deleteUser(userId: number | string) {
     method: 'delete'
   })
 }
+
+/**
+ * 物理删除用户 (彻底删除，不可恢复)
+ * @param userId 用户 ID
+ */
+export function physicallyDeleteUser(userId: number | string) {
+  return request({
+    url: `/api/system/user/${userId}/physical`,
+    method: 'delete'
+  })
+}

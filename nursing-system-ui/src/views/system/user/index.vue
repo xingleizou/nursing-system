@@ -21,11 +21,19 @@
       
       <!-- 表格列表 -->
       <el-table :data="userList" v-loading="loading" border stripe>
-        <el-table-column prop="userId" label="用户ID" width="100" align="center" />
+        <el-table-column prop="userId" label="用户 ID" width="100" align="center" />
         <el-table-column prop="username" label="用户名" width="150" align="center" />
         <el-table-column prop="nickname" label="昵称" width="150" align="center" />
         <el-table-column prop="email" label="邮箱" width="200" align="center" />
         <el-table-column prop="phone" label="手机号" width="150" align="center" />
+        <el-table-column prop="roleName" label="角色" width="150" align="center">
+          <template #default="scope">
+            <el-tag v-if="scope.row.roleName" type="success">
+              {{ scope.row.roleName }}
+            </el-tag>
+            <el-tag v-else type="info">未分配角色</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -33,10 +41,24 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" align="center" min-width="150">
+        <el-table-column label="操作" align="center" min-width="200">
           <template #default="scope">
             <el-button size="small" type="primary" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-dropdown size="small" trigger="click">
+              <el-button size="small">
+                更多操作<el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item>
+                    <el-button type="danger" text size="small" @click="handlePhysicalDelete(scope.row)">
+                      彻底删除
+                    </el-button>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
@@ -79,6 +101,16 @@
             <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="角色" prop="roleId">
+          <el-select v-model="userForm.roleId" placeholder="请选择角色" style="width: 100%">
+            <el-option
+              v-for="role in roleList"
+              :key="role.roleId"
+              :label="role.roleName"
+              :value="role.roleId"
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -92,9 +124,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { getUserPage, createUser, updateUser, deleteUser } from '@/api/user'
+import { getUserPage, createUser, updateUser, deleteUser, physicallyDeleteUser } from '@/api/user'
+import { getRoleList } from '@/api/role'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const userList = ref([])
@@ -108,6 +142,7 @@ const queryParams = reactive({
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const userFormRef = ref<FormInstance>()
+const roleList = ref<any[]>([])
 const userForm = reactive({
   userId: undefined,
   username: '',
@@ -115,7 +150,8 @@ const userForm = reactive({
   password: '',
   email: '',
   phone: '',
-  status: 1
+  status: 1,
+  roleId: undefined
 })
 
 const userRules = reactive<FormRules>({
@@ -123,7 +159,8 @@ const userRules = reactive<FormRules>({
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }],
-  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }]
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }],
+  roleId: [{ required: true, message: '请选择角色', trigger: 'change' }]
 })
 
 const getList = async () => {
@@ -136,6 +173,15 @@ const getList = async () => {
     console.error('获取用户列表失败', error)
   } finally {
     loading.value = false
+  }
+}
+
+const getRoles = async () => {
+  try {
+    const data: any = await getRoleList()
+    roleList.value = data
+  } catch (error) {
+    console.error('获取角色列表失败', error)
   }
 }
 
@@ -159,18 +205,22 @@ const handleAdd = () => {
     password: '',
     email: '',
     phone: '',
-    status: 1
+    status: 1,
+    roleId: undefined
   })
 }
 
 const handleEdit = (row: any) => {
   dialogTitle.value = '编辑用户'
   dialogVisible.value = true
-  Object.assign(userForm, row)
+  Object.assign(userForm, {
+    ...row,
+    roleId: row.roleId || undefined
+  })
 }
 
 const handleDelete = (row: any) => {
-  ElMessageBox.confirm('是否确认删除该用户?', '提示', {
+  ElMessageBox.confirm('是否确认删除该用户？删除后数据将保留在回收站，可以恢复。', '提示', {
     type: 'warning'
   }).then(async () => {
     try {
@@ -180,6 +230,29 @@ const handleDelete = (row: any) => {
     } catch (error) {
       console.error('删除用户失败', error)
     }
+  })
+}
+
+const handlePhysicalDelete = (row: any) => {
+  ElMessageBox.confirm(
+    '警告：彻底删除将永久删除该用户的所有数据，此操作不可恢复！\n\n确定要彻底删除用户 "' + row.username + '" 吗？',
+    '危险操作确认',
+    {
+      type: 'error',
+      distinguishCancelAndClose: true,
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消'
+    }
+  ).then(async () => {
+    try {
+      await physicallyDeleteUser(row.userId)
+      ElMessage.success('彻底删除成功')
+      getList()
+    } catch (error) {
+      console.error('彻底删除用户失败', error)
+    }
+  }).catch(() => {
+    // 用户取消操作
   })
 }
 
@@ -206,6 +279,7 @@ const submitForm = async () => {
 
 onMounted(() => {
   getList()
+  getRoles()
 })
 </script>
 

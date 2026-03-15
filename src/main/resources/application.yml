@@ -65,5 +65,11 @@ sky:
 # ================== 日志级别 ==================
 logging:
   level:
-    root: INFO #INFO代表可以在控制台输出简洁日志，DEBUG代表可以输出所有日志
+    root: INFO #INFO 代表可以在控制台输出简洁日志，DEBUG 代表可以输出所有日志
     com.example.nursingsystem: INFO
+
+# ================== 文件上传配置 ==================
+  servlet:
+    multipart:
+      max-file-size: 100MB  # 单个文件最大大小
+      max-request-size: 100MB  # 请求最大大小

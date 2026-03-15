@@ -18,6 +18,12 @@ const routes: RouteRecordRaw[] = [
         name: 'UserManagement',
         component: () => import('@/views/system/user/index.vue'),
         meta: { title: '基础用户管理' }
+      },
+      {
+        path: 'knowledge/resource',
+        name: 'KnowledgeResource',
+        component: () => import('@/views/knowledge/resource/index.vue'),
+        meta: { title: '知识资源管理' }
       }
     ]
   }

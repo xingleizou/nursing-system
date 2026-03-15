@@ -25,12 +25,22 @@ public class RoleController {
      * 接口描述：获取角色列表，支持按角色名称、权限字符筛选
      * 请求参数：roleName(角色名称模糊搜索), roleKey(权限字符), status(状态)
      */
-    @GetMapping("/list")
+    @GetMapping("/page")
     public Result<Page<Role>> listRoles(RoleDTO roleDTO,
                                         @RequestParam(defaultValue = "1") Integer pageNum,
                                         @RequestParam(defaultValue = "10") Integer pageSize) {
         Page<Role> page = roleService.pageRoles(roleDTO, pageNum, pageSize);
         return Result.success(page);
+    }
+
+    /**
+     * 获取所有角色列表（用于下拉选择）
+     * 接口描述：获取所有正常状态的角色，用于用户管理等场景的下拉选择
+     */
+    @GetMapping("/list")
+    public Result<List<Role>> listAllRoles() {
+        List<Role> roles = roleService.list();
+        return Result.success(roles);
     }
 
     /**
