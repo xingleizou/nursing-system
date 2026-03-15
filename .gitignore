@@ -3,7 +3,8 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-
+# 忽略特定的开发环境配置文件
+src/main/resources/application-dev.yml
 ### STS ###
 .apt_generated
 .classpath
