@@ -19,4 +19,11 @@ public interface AuthService {
      * 验证 Token
      */
     boolean verifyToken(String token);
+
+    /**
+     * 获取用户角色标识
+     * @param userId 用户 ID
+     * @return 角色代码（admin 或其他）
+     */
+    String getUserRole(Long userId);
 }

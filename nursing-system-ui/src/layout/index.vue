@@ -7,10 +7,16 @@
           <el-icon><User /></el-icon>
           <span>基础用户管理</span>
         </el-menu-item>
-        <el-menu-item index="/knowledge/resource">
-          <el-icon><Document /></el-icon>
-          <span>知识资源管理</span>
-        </el-menu-item>
+        <el-sub-menu index="knowledge">
+          <template #title>
+            <el-icon><Document /></el-icon>
+            <span>知识管理</span>
+          </template>
+          <el-menu-item index="/knowledge/resource">资源管理</el-menu-item>
+          <el-menu-item index="/knowledge/category">分类管理</el-menu-item>
+          <el-menu-item index="/knowledge/tag">标签管理</el-menu-item>
+          <el-menu-item index="/knowledge/analysis">统计分析</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     
@@ -72,12 +78,46 @@ const handleCommand = async (command: string) => {
   
   .aside {
     background-color: #304156;
+    
     .el-menu-vertical {
       border-right: none;
       background-color: #304156;
       --el-menu-text-color: #fff;
       --el-menu-active-color: #409eff;
       --el-menu-hover-bg-color: #263445;
+      --el-menu-bg-color: #304156;
+      --el-menu-sub-menu-bg-color: #304156;
+      
+      .el-sub-menu {
+        background-color: #304156;
+        
+        .el-menu {
+          background-color: #304156;
+          
+          .el-menu-item {
+            background-color: #304156;
+            color: #fff;
+            
+            &:hover {
+              background-color: #263445;
+              color: #fff;
+            }
+            
+            &.is-active {
+              background-color: #409eff;
+              color: #fff;
+              
+              .el-icon {
+                color: #fff;
+              }
+            }
+            
+            .el-icon {
+              color: #fff;
+            }
+          }
+        }
+      }
     }
   }
   

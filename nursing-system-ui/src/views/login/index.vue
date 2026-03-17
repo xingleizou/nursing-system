@@ -53,9 +53,17 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        await authStore.login(loginForm)
+        const data: any = await authStore.login(loginForm)
         ElMessage.success('登录成功')
-        router.push('/')
+        
+        // 根据角色跳转到不同的系统
+        if (data.roleCode === 'admin') {
+          // 管理员跳转到后台管理系统
+          router.push('/')
+        } else {
+          // 其他用户跳转到前台系统
+          router.push('/nurse')
+        }
       } catch (error) {
         console.error('登录失败', error)
       } finally {

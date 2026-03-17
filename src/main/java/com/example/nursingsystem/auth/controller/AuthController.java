@@ -3,6 +3,8 @@ package com.example.nursingsystem.auth.controller;
 import com.example.nursingsystem.auth.dto.LoginDTO;
 import com.example.nursingsystem.auth.service.AuthService;
 import com.example.nursingsystem.common.result.Result;
+import com.example.nursingsystem.system.entity.User;
+import com.example.nursingsystem.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     /**
      * 用户登录
@@ -28,13 +31,26 @@ public class AuthController {
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginDTO loginDTO) {
         String token = authService.login(loginDTO.getUsername(), loginDTO.getPassword());
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("token", token);
-        result.put("tokenPrefix", "Bearer ");
-        log.info("用户登录成功：{}", loginDTO.getUsername());
-        log.info("JWT令牌生成成功：{}", token);
-        return Result.success(result);
+            
+        // 查询用户信息
+        User user = userService.getByUsername(loginDTO.getUsername());
+        if (user != null) {
+            // 获取用户角色
+            String roleCode = authService.getUserRole(user.getUserId());
+                
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", token);
+            result.put("tokenPrefix", "Bearer ");
+            result.put("userId", user.getUserId());
+            result.put("username", user.getUsername());
+            result.put("nickname", user.getNickname());
+            result.put("roleCode", roleCode); // 添加角色代码
+            log.info("用户登录成功：{}, 角色：{}", loginDTO.getUsername(), roleCode);
+            log.info("JWT 令牌生成成功：{}", token);
+            return Result.success(result);
+        }
+            
+        return Result.error("用户不存在");
     }
 
     /**
