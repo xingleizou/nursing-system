@@ -2,13 +2,19 @@ package com.example.nursingsystem.knowledge.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.nursingsystem.common.result.Result;
+import com.example.nursingsystem.knowledge.dto.HotKnowledgeResourceDTO;
 import com.example.nursingsystem.knowledge.dto.ResourceQueryDTO;
 import com.example.nursingsystem.knowledge.dto.ResourceResponseDTO;
 import com.example.nursingsystem.knowledge.dto.ResourceUploadDTO;
+import com.example.nursingsystem.knowledge.dto.ZeroAccessWarningDTO;
 import com.example.nursingsystem.knowledge.service.KnowledgeResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 /**
  * 知识资源控制器
@@ -79,16 +85,91 @@ public class KnowledgeResourceController {
     }
 
     @PostMapping("/download/{resourceId}")
-    public Result<String> downloadResource(@PathVariable Long resourceId) {
-        // TODO: 实现下载功能（包含权限校验和日志记录）
-        ResourceResponseDTO resource = knowledgeResourceService.getResourceById(resourceId);
-        
-        // 增加下载次数
-        knowledgeResourceService.incrementDownloadCount(resourceId);
-        
-        // TODO: 记录下载日志
-        // TODO: 返回文件下载 URL 或流式输出
-        
-        return Result.success(resource.getFilePath());
+    public Result<String> downloadResource(@PathVariable Long resourceId, HttpServletRequest request) {
+        // TODO: 从认证信息中获取用户 ID 和用户名
+        Long userId = 1L;
+        String userName = "admin";
+
+        // 获取客户端 IP
+        String clientIp = getClientIp(request);
+
+        // 调用下载服务
+        String downloadUrl = knowledgeResourceService.downloadResource(resourceId, userId, userName, clientIp);
+
+        return Result.success(downloadUrl);
+    }
+
+    @GetMapping("/preview/{resourceId}")
+    public Result<String> previewResource(@PathVariable Long resourceId) {
+        // 调用预览服务
+        String previewUrl = knowledgeResourceService.previewResource(resourceId);
+        return Result.success(previewUrl);
+    }
+
+    /**
+     * 获取热门资源排行（按浏览量）
+     * @param limit 返回数量限制，默认 10
+     * @return 热门资源列表
+     */
+    @GetMapping("/top-viewed")
+    public Result<List<HotKnowledgeResourceDTO>> getTopViewedResources(
+            @RequestParam(value = "limit", defaultValue = "2") int limit) {
+        List<HotKnowledgeResourceDTO> resources = knowledgeResourceService.getTopViewedResources(limit);
+        return Result.success(resources);
+    }
+
+    /**
+     * 获取热门资源排行（按下载量）
+     * @param limit 返回数量限制，默认 10
+     * @return 热门资源列表
+     */
+    @GetMapping("/top-downloaded")
+    public Result<List<HotKnowledgeResourceDTO>> getTopDownloadedResources(
+            @RequestParam(value = "limit", defaultValue = "2") int limit) {
+        List<HotKnowledgeResourceDTO> resources = knowledgeResourceService.getTopDownloadedResources(limit);
+        return Result.success(resources);
+    }
+
+    /**
+     * 获取零访问预警资源列表
+     * @param days 天数阈值（超过该天数未访问的资源），默认 30 天
+     * @param limit 返回数量限制，默认 20
+     * @return 零访问预警资源列表
+     */
+    @GetMapping("/zero-access-warning")
+    public Result<List<ZeroAccessWarningDTO>> getZeroAccessWarnings(
+            @RequestParam(value = "days", defaultValue = "30") int days,
+            @RequestParam(value = "limit", defaultValue = "20") int limit) {
+        List<ZeroAccessWarningDTO> warnings = knowledgeResourceService.getZeroAccessWarnings(days, limit);
+        return Result.success(warnings);
+    }
+
+    /**
+     * 获取客户端 IP 地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+
+        // 对于多个代理的情况，第一个IP为客户端真实IP
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+
+        return ip;
     }
 }

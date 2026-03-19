@@ -1,10 +1,12 @@
 package com.example.nursingsystem.knowledge.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 知识分类实体类
@@ -78,4 +80,11 @@ public class KnowledgeCategory implements Serializable {
      */
     @TableLogic
     private Integer deleted;
+
+    /**
+     * 子分类列表（非数据库字段）
+     */
+    @TableField(exist = false)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<KnowledgeCategory> children;
 }

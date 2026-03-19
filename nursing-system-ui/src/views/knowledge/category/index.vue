@@ -24,7 +24,7 @@
         <el-table-column prop="categoryId" label="ID" width="80" align="center" />
         <el-table-column prop="categoryName" label="分类名称" min-width="200" />
         <el-table-column prop="parentId" label="父级 ID" width="100" align="center" />
-        <el-table-column prop="sort" label="排序" width="100" align="center" />
+        <el-table-column prop="orderNum" label="排序" width="100" align="center" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
@@ -65,8 +65,8 @@
         <el-form-item label="父级 ID" prop="parentId">
           <el-input-number v-model="form.parentId" :min="0" placeholder="默认为 0 表示一级分类" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" :min="0" />
+        <el-form-item label="排序" prop="orderNum">
+          <el-input-number v-model="form.orderNum" :min="0" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" type="textarea" placeholder="分类描述" />
@@ -92,6 +92,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { getCategoryPage, addCategory, updateCategory, deleteCategory } from '@/api/knowledge'
 
 // 查询参数
 const queryParams = reactive({
@@ -104,39 +105,16 @@ const loading = ref(false)
 const categoryList = ref([])
 const total = ref(0)
 
-// 获取列表数据（模拟）
+// 获取列表数据
 const getList = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端 API 获取分类列表
-    // const data: any = await getCategoryPage(queryParams)
-    // categoryList.value = data.records
-    // total.value = data.total
-    
-    // 模拟数据
-    categoryList.value = [
-      {
-        categoryId: 1,
-        categoryName: '护理知识',
-        parentId: 0,
-        sort: 1,
-        description: '基础护理相关知识',
-        status: '1',
-        createTime: '2024-01-01 10:00:00'
-      },
-      {
-        categoryId: 2,
-        categoryName: '医疗文档',
-        parentId: 0,
-        sort: 2,
-        description: '医疗相关文档资料',
-        status: '1',
-        createTime: '2024-01-02 10:00:00'
-      }
-    ]
-    total.value = categoryList.value.length
+    const data: any = await getCategoryPage(queryParams)
+    categoryList.value = data.records
+    total.value = data.total
   } catch (error) {
     console.error('获取分类列表失败', error)
+    ElMessage.error('获取分类列表失败')
   } finally {
     loading.value = false
   }
@@ -170,7 +148,7 @@ const form = reactive({
   categoryId: null as number | null,
   categoryName: '',
   parentId: 0,
-  sort: 0,
+  orderNum: 0,
   description: '',
   status: '1'
 })
@@ -185,7 +163,7 @@ const handleAdd = () => {
   form.categoryId = null
   form.categoryName = ''
   form.parentId = 0
-  form.sort = 0
+  form.orderNum = 0
   form.description = ''
   form.status = '1'
   dialogVisible.value = true
@@ -197,7 +175,7 @@ const handleEdit = (row: any) => {
   form.categoryId = row.categoryId
   form.categoryName = row.categoryName
   form.parentId = row.parentId
-  form.sort = row.sort
+  form.orderNum = row.orderNum
   form.description = row.description
   form.status = row.status
   dialogVisible.value = true
@@ -209,18 +187,18 @@ const submitForm = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端 API 保存分类
-        // if (form.categoryId) {
-        //   await updateCategory(form)
-        // } else {
-        //   await addCategory(form)
-        // }
-        
+        if (form.categoryId) {
+          await updateCategory(form)
+        } else {
+          await addCategory(form)
+        }
+
         ElMessage.success(dialogTitle.value === '新增分类' ? '新增成功' : '修改成功')
         dialogVisible.value = false
         getList()
       } catch (error) {
         console.error('保存失败', error)
+        ElMessage.error('保存失败')
       }
     }
   })
@@ -232,13 +210,13 @@ const handleDelete = (row: any) => {
     type: 'warning'
   }).then(async () => {
     try {
-      // TODO: 调用后端 API 删除分类
-      // await deleteCategory(row.categoryId)
-      
+      await deleteCategory(row.categoryId)
+
       ElMessage.success('删除成功')
       getList()
     } catch (error) {
       console.error('删除失败', error)
+      ElMessage.error('删除失败')
     }
   })
 }

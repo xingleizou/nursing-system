@@ -1,9 +1,11 @@
 package com.example.nursingsystem.knowledge.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.nursingsystem.knowledge.dto.HotKnowledgeResourceDTO;
 import com.example.nursingsystem.knowledge.dto.ResourceQueryDTO;
 import com.example.nursingsystem.knowledge.dto.ResourceResponseDTO;
 import com.example.nursingsystem.knowledge.dto.ResourceUploadDTO;
+import com.example.nursingsystem.knowledge.dto.ZeroAccessWarningDTO;
 import com.example.nursingsystem.knowledge.entity.KnowledgeResource;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -62,4 +64,43 @@ public interface KnowledgeResourceService extends IService<KnowledgeResource> {
      * @param resourceId 资源 ID
      */
     void deleteResource(Long resourceId);
+
+    /**
+     * 下载资源
+     * @param resourceId 资源 ID
+     * @param userId 用户 ID
+     * @param userName 用户名
+     * @param downloadIp 下载 IP
+     * @return 文件下载信息
+     */
+    String downloadResource(Long resourceId, Long userId, String userName, String downloadIp);
+
+    /**
+     * 预览资源
+     * @param resourceId 资源 ID
+     * @return 文件预览 URL 或内容
+     */
+    String previewResource(Long resourceId);
+
+    /**
+     * 获取热门资源排行（按浏览量）
+     * @param limit 返回数量限制
+     * @return 热门资源列表
+     */
+    java.util.List<HotKnowledgeResourceDTO> getTopViewedResources(int limit);
+
+    /**
+     * 获取热门资源排行（按下载量）
+     * @param limit 返回数量限制
+     * @return 热门资源列表
+     */
+    java.util.List<HotKnowledgeResourceDTO> getTopDownloadedResources(int limit);
+
+    /**
+     * 获取零访问预警资源列表
+     * @param days 天数阈值（超过该天数未访问的资源）
+     * @param limit 返回数量限制
+     * @return 零访问预警资源列表
+     */
+    java.util.List<ZeroAccessWarningDTO> getZeroAccessWarnings(int days, int limit);
 }

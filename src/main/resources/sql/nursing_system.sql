@@ -217,6 +217,15 @@ CREATE TABLE `knowledge_category`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '知识分类表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Records of knowledge_category
+-- ----------------------------
+INSERT INTO `knowledge_category` VALUES (1, 0, '护理知识', 1, '0', '0', 'admin', '2026-03-18 10:00:00', '', NULL, '基础护理相关知识', 0);
+INSERT INTO `knowledge_category` VALUES (2, 0, '医疗文档', 2, '0', '0', 'admin', '2026-03-18 10:00:00', '', NULL, '医疗相关文档资料', 0);
+INSERT INTO `knowledge_category` VALUES (3, 0, '培训资料', 3, '0', '0', 'admin', '2026-03-18 10:00:00', '', NULL, '护士培训相关资料', 0);
+INSERT INTO `knowledge_category` VALUES (4, 1, '基础护理', 1, '0', '0', 'admin', '2026-03-18 10:00:00', '', NULL, '基础护理技能知识', 0);
+INSERT INTO `knowledge_category` VALUES (5, 1, '专科护理', 2, '0', '0', 'admin', '2026-03-18 10:00:00', '', NULL, '专科护理知识', 0);
+
+-- ----------------------------
 -- Table structure for knowledge_tag
 -- ----------------------------
 DROP TABLE IF EXISTS `knowledge_tag`;
@@ -232,6 +241,15 @@ CREATE TABLE `knowledge_tag`  (
   UNIQUE INDEX `uk_tag_name`(`tag_name` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '标签字典表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of knowledge_tag
+-- ----------------------------
+INSERT INTO `knowledge_tag` VALUES (1, '基础护理', '#409EFF', '0', 'admin', '2026-03-18 10:00:00', '0');
+INSERT INTO `knowledge_tag` VALUES (2, '临床护理', '#67C23A', '0', 'admin', '2026-03-18 10:00:00', '0');
+INSERT INTO `knowledge_tag` VALUES (3, '急救知识', '#E6A23C', '0', 'admin', '2026-03-18 10:00:00', '0');
+INSERT INTO `knowledge_tag` VALUES (4, '感染控制', '#F56C6C', '0', 'admin', '2026-03-18 10:00:00', '0');
+INSERT INTO `knowledge_tag` VALUES (5, '护理文书', '#909399', '0', 'admin', '2026-03-18 10:00:00', '0');
 
 -- ----------------------------
 -- Table structure for knowledge_resource

@@ -22,4 +22,67 @@
         WHERE resource_id = #{resourceId}
     </update>
 
+    <!-- 查询热门资源（按浏览量） -->
+    <select id="selectTopViewedResources" resultType="java.util.HashMap">
+        SELECT 
+            kr.resource_id,
+            kr.title,
+            kr.file_type,
+            kc.category_name,
+            kr.upload_user_name,
+            kr.view_count,
+            kr.download_count,
+            DATE_FORMAT(kr.create_time, '%Y-%m-%d') AS create_time
+        FROM knowledge_resource kr
+        LEFT JOIN knowledge_category kc ON kr.category_id = kc.category_id
+        WHERE kr.deleted = 0 AND kr.status = '1'
+        ORDER BY kr.view_count DESC, kr.create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询热门资源（按下载量） -->
+    <select id="selectTopDownloadedResources" resultType="java.util.HashMap">
+        SELECT 
+            kr.resource_id,
+            kr.title,
+            kr.file_type,
+            kc.category_name,
+            kr.upload_user_name,
+            kr.view_count,
+            kr.download_count,
+            DATE_FORMAT(kr.create_time, '%Y-%m-%d') AS create_time
+        FROM knowledge_resource kr
+        LEFT JOIN knowledge_category kc ON kr.category_id = kc.category_id
+        WHERE kr.deleted = 0 AND kr.status = '1'
+        ORDER BY kr.download_count DESC, kr.create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询零访问预警资源 -->
+    <select id="selectZeroAccessWarnings" resultType="java.util.HashMap">
+        SELECT 
+            kr.resource_id,
+            kr.title,
+            kr.file_type,
+            kc.category_name,
+            kr.upload_user_name,
+            kr.view_count,
+            kr.download_count,
+            kr.file_size,
+            DATE_FORMAT(kr.create_time, '%Y-%m-%d') AS create_time,
+            MAX(kdl.download_time) AS last_access_time,
+            DATEDIFF(NOW(), COALESCE(MAX(kdl.download_time), NOW())) AS days_without_access
+        FROM knowledge_resource kr
+        LEFT JOIN knowledge_category kc ON kr.category_id = kc.category_id
+        LEFT JOIN knowledge_download_log kdl ON kr.resource_id = kdl.resource_id
+        WHERE kr.deleted = 0 
+          AND kr.status = '1'
+        GROUP BY kr.resource_id, kr.title, kr.file_type, kc.category_name, 
+                 kr.upload_user_name, kr.view_count, kr.download_count, 
+                 kr.file_size, kr.create_time
+        HAVING MAX(kdl.download_time) IS NULL OR MAX(kdl.download_time) &lt; #{thresholdTime}
+        ORDER BY days_without_access DESC, kr.create_time ASC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

@@ -23,8 +23,11 @@
       <el-table :data="tagList" v-loading="loading" border stripe>
         <el-table-column prop="tagId" label="ID" width="80" align="center" />
         <el-table-column prop="tagName" label="标签名称" min-width="200" />
-        <el-table-column prop="categoryIds" label="关联分类" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="100" align="center" />
+        <el-table-column prop="color" label="颜色" width="100" align="center">
+          <template #default="scope">
+            <div :style="{ backgroundColor: scope.row.color, width: '20px', height: '20px', borderRadius: '3px', margin: '0 auto' }"></div>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.status === '1' ? 'success' : 'danger'">
@@ -62,18 +65,8 @@
         <el-form-item label="标签名称" prop="tagName">
           <el-input v-model="form.tagName" placeholder="请输入标签名称" />
         </el-form-item>
-        <el-form-item label="关联分类" prop="categoryIds">
-          <el-select v-model="form.categoryIds" multiple placeholder="请选择关联分类" style="width: 100%">
-            <el-option
-              v-for="item in categoryOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="排序" prop="sort">
-          <el-input-number v-model="form.sort" :min="0" />
+        <el-form-item label="颜色" prop="color">
+          <el-color-picker v-model="form.color" show-alpha :predefine="predefineColors" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -96,6 +89,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { getTagPage, addTag, updateTag, deleteTag } from '@/api/knowledge'
 
 // 查询参数
 const queryParams = reactive({
@@ -107,44 +101,29 @@ const queryParams = reactive({
 const loading = ref(false)
 const tagList = ref([])
 const total = ref(0)
-const categoryOptions = ref([
-  { value: 1, label: '护理知识' },
-  { value: 2, label: '医疗文档' }
+const predefineColors = ref([
+  '#409EFF',
+  '#67C23A',
+  '#E6A23C',
+  '#F56C6C',
+  '#909399',
+  '#1890ff',
+  '#52c41a',
+  '#faad14',
+  '#f5222d',
+  '#722ed1'
 ])
 
-// 获取列表数据（模拟）
+// 获取列表数据
 const getList = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端 API 获取标签列表
-    // const data: any = await getTagPage(queryParams)
-    // tagList.value = data.records
-    // total.value = data.total
-    
-    // 模拟数据
-    tagList.value = [
-      {
-        tagId: 1,
-        tagName: '基础护理',
-        categoryIds: '护理知识',
-        sort: 1,
-        status: '1',
-        createTime: '2024-01-01 10:00:00',
-        updateTime: '2024-01-01 10:00:00'
-      },
-      {
-        tagId: 2,
-        tagName: '临床护理',
-        categoryIds: '护理知识，医疗文档',
-        sort: 2,
-        status: '1',
-        createTime: '2024-01-02 10:00:00',
-        updateTime: '2024-01-02 10:00:00'
-      }
-    ]
-    total.value = tagList.value.length
+    const data: any = await getTagPage(queryParams)
+    tagList.value = data.records
+    total.value = data.total
   } catch (error) {
     console.error('获取标签列表失败', error)
+    ElMessage.error('获取标签列表失败')
   } finally {
     loading.value = false
   }
@@ -177,8 +156,7 @@ const formRef = ref<FormInstance>()
 const form = reactive({
   tagId: null as number | null,
   tagName: '',
-  categoryIds: [] as number[],
-  sort: 0,
+  color: '#409EFF',
   status: '1'
 })
 
@@ -191,7 +169,7 @@ const handleAdd = () => {
   dialogTitle.value = '新增标签'
   form.tagId = null
   form.tagName = ''
-  form.categoryIds = []
+  form.color = '#409EFF'
   form.sort = 0
   form.status = '1'
   dialogVisible.value = true
@@ -202,9 +180,7 @@ const handleEdit = (row: any) => {
   dialogTitle.value = '编辑标签'
   form.tagId = row.tagId
   form.tagName = row.tagName
-  // TODO: 需要将 categoryIds 字符串转换为数组
-  form.categoryIds = row.categoryIds ? row.categoryIds.split(',').map((id: string) => parseInt(id)) : []
-  form.sort = row.sort
+  form.color = row.color || '#409EFF'
   form.status = row.status
   dialogVisible.value = true
 }
@@ -215,18 +191,18 @@ const submitForm = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端 API 保存标签
-        // if (form.tagId) {
-        //   await updateTag(form)
-        // } else {
-        //   await addTag(form)
-        // }
-        
+        if (form.tagId) {
+          await updateTag(form)
+        } else {
+          await addTag(form)
+        }
+
         ElMessage.success(dialogTitle.value === '新增标签' ? '新增成功' : '修改成功')
         dialogVisible.value = false
         getList()
       } catch (error) {
         console.error('保存失败', error)
+        ElMessage.error('保存失败')
       }
     }
   })
@@ -238,13 +214,13 @@ const handleDelete = (row: any) => {
     type: 'warning'
   }).then(async () => {
     try {
-      // TODO: 调用后端 API 删除标签
-      // await deleteTag(row.tagId)
-      
+      await deleteTag(row.tagId)
+
       ElMessage.success('删除成功')
       getList()
     } catch (error) {
       console.error('删除失败', error)
+      ElMessage.error('删除失败')
     }
   })
 }

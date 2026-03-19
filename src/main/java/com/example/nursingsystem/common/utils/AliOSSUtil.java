@@ -149,6 +149,45 @@ public class AliOSSUtil {
     }
 
     /**
+     * 生成带签名的临时URL（用于预览和下载）
+     * @param fileUrl 原始文件URL
+     * @param expireSeconds 过期时间（秒）
+     * @return 带签名的URL
+     */
+    public String generatePresignedUrl(String fileUrl, long expireSeconds) {
+        try {
+            // 从 URL 中提取 objectName
+            String host = getEndpointHost();
+            String objectName = fileUrl.replace("https://" + aliOssProperties.getBucketName() + "." + host + "/", "");
+
+            OSS ossClient = new OSSClientBuilder().build(
+                    aliOssProperties.getEndpoint(),
+                    aliOssProperties.getAccessKeyId(),
+                    aliOssProperties.getAccessKeySecret());
+
+            try {
+                // 生成带签名的URL
+                Date expiration = new Date(System.currentTimeMillis() + expireSeconds * 1000);
+                java.net.URL signedUrl = ossClient.generatePresignedUrl(
+                        aliOssProperties.getBucketName(),
+                        objectName,
+                        expiration);
+
+                log.info("生成签名URL成功，过期时间：{}秒", expireSeconds);
+                return signedUrl.toString();
+            } finally {
+                if (ossClient != null) {
+                    ossClient.shutdown();
+                }
+            }
+        } catch (Exception e) {
+            log.error("生成签名URL失败", e);
+            // 如果生成失败，返回原始URL
+            return fileUrl;
+        }
+    }
+
+    /**
      * 从 endpoint 提取 host
      */
     private String getEndpointHost() {

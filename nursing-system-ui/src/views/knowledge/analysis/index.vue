@@ -4,6 +4,9 @@
       <template #header>
         <div class="card-header">
           <span>智能统计看板</span>
+          <el-button type="primary" size="small" @click="getStatistics" :loading="loading">
+            <el-icon><Refresh /></el-icon> 刷新数据
+          </el-button>
         </div>
       </template>
 
@@ -108,9 +111,12 @@
               <span>热门资源 Top 10（浏览）</span>
             </template>
             <el-table :data="topViewedResources" stripe style="width: 100%">
-              <el-table-column type="index" label="排名" width="60" align="center" />
+              <el-table-column prop="rank" label="排名" width="60" align="center" />
               <el-table-column prop="title" label="资源标题" min-width="200" show-overflow-tooltip />
+              <el-table-column prop="categoryName" label="分类" width="120" />
+              <el-table-column prop="fileType" label="类型" width="80" />
               <el-table-column prop="viewCount" label="浏览量" width="100" align="center" />
+              <el-table-column prop="downloadCount" label="下载量" width="100" align="center" />
             </el-table>
           </el-card>
         </el-col>
@@ -121,9 +127,42 @@
               <span>热门资源 Top 10（下载）</span>
             </template>
             <el-table :data="topDownloadedResources" stripe style="width: 100%">
-              <el-table-column type="index" label="排名" width="60" align="center" />
+              <el-table-column prop="rank" label="排名" width="60" align="center" />
               <el-table-column prop="title" label="资源标题" min-width="200" show-overflow-tooltip />
+              <el-table-column prop="categoryName" label="分类" width="120" />
+              <el-table-column prop="fileType" label="类型" width="80" />
+              <el-table-column prop="viewCount" label="浏览量" width="100" align="center" />
               <el-table-column prop="downloadCount" label="下载量" width="100" align="center" />
+            </el-table>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 零访问预警 -->
+      <el-row :gutter="20" class="chart-row">
+        <el-col :span="24">
+          <el-card>
+            <template #header>
+              <div class="card-header">
+                <span>零访问预警（超过 30 天未访问的资源）</span>
+                <el-tag type="danger" effect="dark">共 {{ zeroAccessWarnings.length }} 个资源需要关注</el-tag>
+              </div>
+            </template>
+            <el-table :data="zeroAccessWarnings" stripe style="width: 100%">
+              <el-table-column prop="title" label="资源标题" min-width="250" show-overflow-tooltip />
+              <el-table-column prop="categoryName" label="分类" width="120" />
+              <el-table-column prop="fileType" label="类型" width="80" />
+              <el-table-column prop="uploadUserName" label="上传者" width="100" />
+              <el-table-column prop="viewCount" label="浏览量" width="80" align="center" />
+              <el-table-column prop="downloadCount" label="下载量" width="80" align="center" />
+              <el-table-column prop="daysWithoutAccess" label="未访问天数" width="100" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="row.daysWithoutAccess > 60 ? 'danger' : 'warning'">
+                    {{ row.daysWithoutAccess }} 天
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="createTime" label="上传时间" width="120" />
             </el-table>
           </el-card>
         </el-col>
@@ -133,10 +172,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Document, VideoPlay, Download, User } from '@element-plus/icons-vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { Document, VideoPlay, Download, User, Refresh } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
+import { getTopViewedResources, getTopDownloadedResources, getZeroAccessWarnings } from '@/api/knowledge'
+import { ElMessage } from 'element-plus'
 
 const loading = ref(false)
 const statistics = ref<any>({
@@ -148,15 +189,67 @@ const statistics = ref<any>({
 
 const topViewedResources = ref<any[]>([])
 const topDownloadedResources = ref<any[]>([])
+const zeroAccessWarnings = ref<any[]>([])
 
-// 获取统计数据（模拟数据）
+// 定时刷新间隔（毫秒）
+const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 分钟
+let refreshTimer: number | null = null
+
+// 启动定时刷新
+const startAutoRefresh = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+  refreshTimer = window.setInterval(() => {
+    console.log('定时刷新统计数据...')
+    getStatistics()
+  }, REFRESH_INTERVAL)
+}
+
+// 停止定时刷新
+const stopAutoRefresh = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+// 获取统计数据
 const getStatistics = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端 API 获取统计数据
-    // const data: any = await getAnalysisDashboard()
-    
-    // 模拟数据
+    console.log('开始获取统计数据...')
+      
+    // 获取热门资源（按浏览量）
+    console.log('获取热门资源（按浏览量）')
+    const viewResult = await getTopViewedResources(2)
+    console.log('热门资源（按浏览量）结果:', viewResult)
+    console.log('热门资源（按浏览量）数据类型:', typeof viewResult, Array.isArray(viewResult))
+    topViewedResources.value = Array.isArray(viewResult) ? viewResult : []
+      
+    // 获取热门资源（按下载量）
+    console.log('获取热门资源（按下载量）')
+    const downloadResult = await getTopDownloadedResources(2)
+    console.log('热门资源（按下载量）结果:', downloadResult)
+    console.log('热门资源（按下载量）数据类型:', typeof downloadResult, Array.isArray(downloadResult))
+    topDownloadedResources.value = Array.isArray(downloadResult) ? downloadResult : []
+      
+    // 获取零访问预警资源
+    console.log('获取零访问预警资源')
+    const warningResult = await getZeroAccessWarnings(30, 20)
+    console.log('零访问预警资源结果:', warningResult)
+    console.log('零访问预警资源数据类型:', typeof warningResult, Array.isArray(warningResult))
+    zeroAccessWarnings.value = Array.isArray(warningResult) ? warningResult : []
+      
+    console.log('数据加载完成:', {
+      topViewedResources: topViewedResources.value.length,
+      topDownloadedResources: topDownloadedResources.value.length,
+      zeroAccessWarnings: zeroAccessWarnings.value.length
+    })
+      
+    // TODO: 后续可以添加更多统计数据的获取
+      
+    // 模拟数据用于图表展示（等待后端完善）
     statistics.value = {
       documentStatistics: {
         totalDocuments: 156,
@@ -181,18 +274,7 @@ const getStatistics = async () => {
         { fileType: 'MP4', count: 18, percentage: 11.54 }
       ]
     }
-    
-    // 模拟热门资源
-    topViewedResources.value = Array.from({ length: 10 }, (_, i) => ({
-      title: `护理知识文档 ${i + 1}`,
-      viewCount: Math.floor(Math.random() * 1000) + 100
-    }))
-    
-    topDownloadedResources.value = Array.from({ length: 10 }, (_, i) => ({
-      title: `医疗培训资料 ${i + 1}`,
-      downloadCount: Math.floor(Math.random() * 500) + 50
-    }))
-    
+      
     // 渲染图表
     setTimeout(() => {
       renderTypeDistributionChart()
@@ -200,9 +282,10 @@ const getStatistics = async () => {
       renderViewTrendChart()
       renderDownloadTrendChart()
     }, 100)
-    
+      
   } catch (error) {
-    console.error('获取统计数据失败', error)
+    console.error('获取统计数据失败，详细错误:', error)
+    ElMessage.error('获取统计数据失败：' + (error as Error).message)
   } finally {
     loading.value = false
   }
@@ -428,6 +511,12 @@ const renderDownloadTrendChart = () => {
 
 onMounted(() => {
   getStatistics()
+  startAutoRefresh() // 启动定时刷新
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
@@ -439,6 +528,10 @@ onMounted(() => {
     align-items: center;
     font-size: 18px;
     font-weight: bold;
+    
+    .el-button {
+      margin-left: 10px;
+    }
   }
   
   .overview-cards {

@@ -31,4 +31,28 @@ public interface KnowledgeResourceMapper extends BaseMapper<KnowledgeResource> {
      * @return 影响行数
      */
     int incrementViewCount(@Param("resourceId") Long resourceId);
+
+    /**
+     * 查询热门资源（按浏览量）
+     * @param limit 返回数量限制
+     * @return 热门资源列表
+     */
+    java.util.List<java.util.Map<String, Object>> selectTopViewedResources(@Param("limit") int limit);
+
+    /**
+     * 查询热门资源（按下载量）
+     * @param limit 返回数量限制
+     * @return 热门资源列表
+     */
+    java.util.List<java.util.Map<String, Object>> selectTopDownloadedResources(@Param("limit") int limit);
+
+    /**
+     * 查询零访问预警资源
+     * @param thresholdTime 时间阈值
+     * @param limit 返回数量限制
+     * @return 零访问预警资源列表
+     */
+    java.util.List<java.util.Map<String, Object>> selectZeroAccessWarnings(
+            @Param("thresholdTime") java.time.LocalDateTime thresholdTime,
+            @Param("limit") int limit);
 }
